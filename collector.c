@@ -57,11 +57,17 @@ collector_runner(void *s)
 	size_t numaggregators = aggregator_numaggregators();
 	server *submission = (server *)s;
 	char metric[8096];
+	char instance[4096];
 	char *m;
 	size_t sizem = 0;
 
 	/* prepare hostname for graphite metrics */
-	snprintf(metric, sizeof(metric), "carbon.relays.%s", relay_hostname);
+	if (relay_instance) {
+		snprintf(instance, sizeof(instance), "-%s", relay_instance);
+	} else {
+		instance[0] = '\0';
+	}
+	snprintf(metric, sizeof(metric), "carbon.relays.%s%s", relay_hostname, instance);
 	for (m = metric + strlen("carbon.relays."); *m != '\0'; m++)
 		if (*m == '.')
 			*m = '_';
