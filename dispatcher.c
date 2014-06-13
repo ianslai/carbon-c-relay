@@ -558,7 +558,7 @@ dispatch_shutdown(dispatcher *d)
 }
 
 /**
- * Returns the wall-clock time in milliseconds consumed by this dispatcher.
+ * Returns the wall-clock time in microseconds consumed by this dispatcher.
  */
 inline size_t
 dispatch_get_ticks(dispatcher *self)

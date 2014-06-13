@@ -57,8 +57,11 @@ typedef struct _server {
 	struct _server *next;
 } server;
 
-#define BATCH_SIZE   2500
-#define QUEUE_SIZE  25000
+size_t server_batch_size =  2500;
+size_t server_queue_size = 25000;
+
+#define BATCH_SIZE   server_batch_size
+#define QUEUE_SIZE   server_queue_size
 
 static server *servers = NULL;
 
@@ -632,7 +635,7 @@ server_failed(server *s)
 }
 
 /**
- * Returns the wall-clock time in milliseconds consumed sending metrics.
+ * Returns the wall-clock time in microseconds consumed sending metrics.
  */
 inline size_t
 server_get_ticks(server *s)

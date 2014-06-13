@@ -35,4 +35,7 @@ size_t server_get_dropped(server *s);
 size_t server_get_queue_len(server *s);
 server **server_get_servers(void);
 
+extern size_t server_batch_size;
+extern size_t server_queue_size;
+
 #endif

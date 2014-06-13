@@ -88,7 +88,7 @@ do_version(void)
 void
 do_usage(int exitcode)
 {
-	printf("Usage: relay [-vdst] -f <config> [-p <port>] [-i <instance>] [-w <workers>]\n");
+	printf("Usage: relay [-vdst] -f <config> [-p <port>] [-i <instance>] [-w <workers>] [-b <size>] [-q <size>]\n");
 	printf("\n");
 	printf("Options:\n");
 	printf("  -v  print version and exit\n");
@@ -96,6 +96,8 @@ do_usage(int exitcode)
 	printf("  -p  listen on <port> for connections, defaults to 2003\n");
 	printf("  -i  name of instance (appended to hostname, used in reporting statistics)\n");
 	printf("  -w  user <workers> worker threads, defaults to 16\n");
+	printf("  -b  maximum size of each send batch, defaults to 2500\n");
+	printf("  -q  maximum size of each send queue, defaults to 25000\n");
 	printf("  -d  debug mode: currently writes statistics to stdout\n");
 	printf("  -s  submission mode: write info about errors to stdout\n");
 	printf("  -t  config test mode: prints rule matches from input on stdin\n");
@@ -121,7 +123,7 @@ main(int argc, char * const argv[])
 	size_t numcomputes;
 	server *internal_submission;
 
-	while ((ch = getopt(argc, argv, ":hvdstf:p:w:i:")) != -1) {
+	while ((ch = getopt(argc, argv, ":hvdstf:p:w:i:b:q:")) != -1) {
 		switch (ch) {
 			case 'v':
 				do_version();
@@ -155,6 +157,20 @@ main(int argc, char * const argv[])
 			case 'i':
 				relay_instance = optarg;
 				break;
+			case 'b':
+				server_batch_size = atoi(optarg);
+				if (server_batch_size <= 0) {
+					fprintf(stderr, "error: batch size needs to be a number >0\n");
+					do_usage(1);
+				}
+				break;
+			case 'q':
+				server_queue_size = atoi(optarg);
+				if (server_queue_size <= 0) {
+					fprintf(stderr, "error: queue size needs to be a number >0\n");
+					do_usage(1);
+				}
+				break;
 			case '?':
 			case ':':
 				do_usage(1);
@@ -186,6 +202,8 @@ main(int argc, char * const argv[])
 		fprintf(stdout, "    relay instance = %s\n", relay_instance);
 	fprintf(stdout, "    listen port = %u\n", listenport);
 	fprintf(stdout, "    workers = %d\n", workercnt);
+	fprintf(stdout, "    max batch size = %d\n", (int) server_batch_size);
+	fprintf(stdout, "    max queue size = %d\n", (int) server_queue_size);
 	if (mode == DEBUG)
 		fprintf(stdout, "    debug = true\n");
 	else if (mode == SUBMISSION)
