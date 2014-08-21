@@ -96,8 +96,8 @@ do_usage(int exitcode)
 	printf("  -p  listen on <port> for connections, defaults to 2003\n");
 	printf("  -i  name of instance (appended to hostname, used in reporting statistics)\n");
 	printf("  -w  user <workers> worker threads, defaults to 16\n");
-	printf("  -b  maximum size of each send batch, defaults to 2500\n");
-	printf("  -q  maximum size of each send queue, defaults to 25000\n");
+	printf("  -b  server send batch size, defaults to 2500\n");
+	printf("  -q  server queue size, defaults to 25000\n");
 	printf("  -d  debug mode: currently writes statistics to stdout\n");
 	printf("  -s  submission mode: write info about errors to stdout\n");
 	printf("  -t  config test mode: prints rule matches from input on stdin\n");
@@ -116,6 +116,8 @@ main(int argc, char * const argv[])
 	char workercnt = 0;
 	char *routes = NULL;
 	unsigned short listenport = 2003;
+	int batchsize = 2500;
+	int queuesize = 25000;
 	enum rmode mode = NORMAL;
 	int ch;
 	char nowbuf[24];
@@ -158,15 +160,15 @@ main(int argc, char * const argv[])
 				relay_instance = optarg;
 				break;
 			case 'b':
-				server_batch_size = atoi(optarg);
-				if (server_batch_size <= 0) {
+				batchsize = atoi(optarg);
+				if (batchsize <= 0) {
 					fprintf(stderr, "error: batch size needs to be a number >0\n");
 					do_usage(1);
 				}
 				break;
 			case 'q':
-				server_queue_size = atoi(optarg);
-				if (server_queue_size <= 0) {
+				queuesize = atoi(optarg);
+				if (queuesize <= 0) {
 					fprintf(stderr, "error: queue size needs to be a number >0\n");
 					do_usage(1);
 				}
@@ -202,15 +204,15 @@ main(int argc, char * const argv[])
 		fprintf(stdout, "    relay instance = %s\n", relay_instance);
 	fprintf(stdout, "    listen port = %u\n", listenport);
 	fprintf(stdout, "    workers = %d\n", workercnt);
-	fprintf(stdout, "    max batch size = %d\n", (int) server_batch_size);
-	fprintf(stdout, "    max queue size = %d\n", (int) server_queue_size);
+	fprintf(stdout, "    send batch size = %d\n", batchsize);
+	fprintf(stdout, "    server queue size = %d\n", queuesize);
 	if (mode == DEBUG)
 		fprintf(stdout, "    debug = true\n");
 	else if (mode == SUBMISSION)
 		fprintf(stdout, "    submission = true\n");
 	fprintf(stdout, "    routes configuration = %s\n", routes);
 	fprintf(stdout, "\n");
-	if (router_readconfig(routes) == 0) {
+	if (router_readconfig(routes, batchsize, queuesize) == 0) {
 		fprintf(stderr, "failed to read configuration '%s'\n", routes);
 		return 1;
 	}
@@ -230,7 +232,7 @@ main(int argc, char * const argv[])
 
 	/* shortcut for rule testing mode */
 	if (mode == TEST) {
-		char metricbuf[8096];
+		char metricbuf[8192];
 		char *p;
 
 		fflush(stdout);
@@ -303,8 +305,8 @@ main(int argc, char * const argv[])
 
 	/* server used for delivering metrics produced inside the relay,
 	 * that is collector (statistics) and aggregator (aggregations) */
-	if ((internal_submission = server_new_qsize("internal", listenport,
-					3000 + (numcomputes * 3))) == NULL)
+	if ((internal_submission = server_new("internal", listenport,
+					3000 + (numcomputes * 3), batchsize)) == NULL)
 	{
 		fprintf(stderr, "failed to create internal submission queue, shutting down\n");
 		keep_running = 0;

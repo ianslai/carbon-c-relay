@@ -100,7 +100,7 @@ determine_if_regex(route *r, char *pat)
 	/* try and see if we can avoid using a regex match, for
 	 * it is simply very slow/expensive to do so: most of
 	 * the time, people don't need fancy matching rules */
-	char patbuf[8096];
+	char patbuf[8192];
 	char *e = pat;
 	char *pb = patbuf;
 	char escape = 0;
@@ -201,7 +201,7 @@ determine_if_regex(route *r, char *pat)
  *    stop;
  */
 int
-router_readconfig(const char *path)
+router_readconfig(const char *path, size_t queuesize, size_t batchsize)
 {
 	FILE *cnf;
 	char *buf;
@@ -390,7 +390,8 @@ router_readconfig(const char *path)
 						return 0;
 					}
 					w->next = NULL;
-					w->server = server_new(ip, (unsigned short)port);
+					w->server = server_new(ip, (unsigned short)port,
+							queuesize, batchsize);
 					if (w->server == NULL) {
 						fprintf(stderr, "failed to add server %s:%d "
 								"to cluster %s: %s\n", ip, port,
@@ -425,7 +426,8 @@ router_readconfig(const char *path)
 						return 0;
 					}
 					w->next = NULL;
-					w->server = server_new(ip, (unsigned short)port);
+					w->server = server_new(ip, (unsigned short)port,
+							queuesize, batchsize);
 					if (w->server == NULL) {
 						fprintf(stderr, "failed to add server %s:%d "
 								"to forwarders: %s\n", ip, port,
